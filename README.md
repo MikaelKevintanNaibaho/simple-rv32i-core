@@ -46,7 +46,7 @@ Make sure you have the following installed:
 
 - Clone the repository:
 ```bash
-git clone https://github.com/yourusername/rv32i-core.git
+git clone https://github.com/MikaelKevintanNaibaho/rv32i-core.git
 cd rv32i-core
 ```
 
