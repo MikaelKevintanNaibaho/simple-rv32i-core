@@ -57,7 +57,7 @@ cd rv32i-core
 make
 ```
 
-- **Assemble a Sample Program
+- **Assemble a Sample Program**
 ```bash
 make program.bin
 ```
