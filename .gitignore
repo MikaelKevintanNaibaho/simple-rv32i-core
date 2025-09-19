@@ -1,0 +1,18 @@
+
+# Build artifacts
+/build/
+/rv32i
+compile_commands.json
+*.bin
+test_runner
+
+output.txt
+
+# OS / Editor junk
+*.swp
+*~
+.DS_Store
+/.cache/
+
+
+
