@@ -13,6 +13,7 @@ It is written in **C**.
   - **Control Transfer**: `LUI`, `AUIPC`, `JAL`, `JALR`, `BEQ`, `BNE`, `BLT`, `BGE`, `BLTU`, `BGEU`
   - **Load and Store**: `LB`, `LH`, `LW`, `LBU`, `LHU`, `SB`, `SH`, `SW`
   - **System**: `ECALL`, `EBREAK`, `FENCE`
+  - **Multiplication and Division**: `MUL`, `MULH`, `MULHU`, `MULHSU`, `DIV`, `DIVU`, `REM`, `REMU`
 
 - **CPU and Memory Emulation**  
   Provides basic emulation of registers and memory.
