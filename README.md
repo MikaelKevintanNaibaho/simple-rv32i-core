@@ -14,6 +14,7 @@ It is written in **C**.
   - **Load and Store**: `LB`, `LH`, `LW`, `LBU`, `LHU`, `SB`, `SH`, `SW`
   - **System**: `ECALL`, `EBREAK`, `FENCE`
   - **Multiplication and Division**: `MUL`, `MULH`, `MULHU`, `MULHSU`, `DIV`, `DIVU`, `REM`, `REMU`
+  - **Atomic**: `LR.W`, `SC.W`, `AMOSWAP.W`, `AMOADD.W`, `AMOXOR.W`, `AMOAND.W`, `AMOOR.W`, `AMOMIN.W`, `AMOMAX.W`, `AMOMINU.W`, `AMOMAXU.W`
 
 - **CPU and Memory Emulation**  
   Provides basic emulation of registers and memory.

@@ -18,6 +18,8 @@ struct cpu *cpu_create(u32 mem_size)
 	memset(c->registers, 0, sizeof(c->registers));
 	c->memory = memory_create(mem_size);
 	c->state = CPU_STATE_RUNNING;
+	c->reservation_set = 0;
+	c->reservation_address = 0;
 
 	return c;
 }
@@ -38,6 +40,8 @@ void cpu_reset(struct cpu *c)
 	memset(c->registers, 0, sizeof(c->registers));
 	memset(c->memory, 0, MEM_SIZE);
 	c->state = CPU_STATE_RUNNING;
+	c->reservation_set = 0;
+	c->reservation_address = 0;
 }
 
 void cpu_step(struct cpu *c)

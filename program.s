@@ -107,6 +107,23 @@ subroutine:
   addi  x27, x0, 123        # Inside the subroutine, x27 = 123
   jalr  x0, x1, 0           # Jump back using the address stored in x1
 
+after_subroutine:
+  jal x0, amo_test          # Now, call the atomic test section
+
+# --- Atomic Instructions ---
+amo_test:
+  la    x10, amo_data       # Load address of our test data
+  li    x11, 5              # Load value 5 into x11
+  # Swap the value in memory (initially 0) with x11 (5)
+  # x12 will get the old value (0)
+  # memory will now contain 5
+  amoswap.w x12, x11, (x10)
+  # Add the value in x11 (5) to memory (currently 5)
+  # x13 will get the old value (5)
+  # memory will now contain 10
+  amoadd.w  x13, x11, (x10)
+  jr x31 # Return from amo_test subroutine (assuming x31 has return address, though jal x0 doesn't set one)
+
 # --- Halt Program ---
 # Use FENCE and then ECALL to gracefully stop the emulator.
 end_loop:
@@ -125,3 +142,5 @@ test_data:
   .word 0xDEADBEEF
 store_target:
   .space 8
+amo_data:
+  .word 0
