@@ -430,3 +430,135 @@ TEST_F(RV32ITest, DIV)
 
 	EXPECT_EQ(cpu->registers[3], 10);
 }
+
+TEST_F(RV32ITest, Atomics)
+{
+	uint32_t addr = 0x100;
+	std::vector<uint32_t> program;
+
+	// --- LR.W and SC.W (Successful) ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = 200; // Value to store
+	mem_store32(cpu->memory, addr, 100);
+	program = {
+		0x1000A1AF, // lr.w x3, (x1)
+		0x1820B22F // sc.w x4, x2, (x1)
+	};
+	load_program(program);
+	run_program(2);
+	EXPECT_EQ(cpu->registers[3], 100)
+		<< "LR should load the original value";
+	EXPECT_EQ(cpu->registers[4], 0) << "SC should succeed, returning 0";
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 200)
+		<< "Memory should be updated on successful SC";
+
+	// --- AMOSWAP.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = 20; // Value to swap
+	mem_store32(cpu->memory, addr, 10);
+	program = { 0x0820B1AF }; // amoswap.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], 10)
+		<< "AMOSWAP should return the original value";
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 20)
+		<< "Memory should hold the new value after AMOSWAP";
+
+	// --- AMOADD.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = 5; // Value to add
+	mem_store32(cpu->memory, addr, 40);
+	program = { 0x0020B1AF }; // amoadd.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], 40)
+		<< "AMOADD should return the original value";
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 45)
+		<< "Memory should hold the sum after AMOADD";
+
+	// --- AMOXOR.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = 0b1100;
+	mem_store32(cpu->memory, addr, 0b1010);
+	program = { 0x2020B1AF }; // amoxor.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], 0b1010);
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 0b0110);
+
+	// --- AMOAND.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = 0b1100;
+	mem_store32(cpu->memory, addr, 0b1010);
+	program = { 0x6020B1AF }; // amoand.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], 0b1010);
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 0b1000);
+
+	// --- AMOOR.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = 0b1100;
+	mem_store32(cpu->memory, addr, 0b1010);
+	program = { 0x4020B1AF }; // amoor.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], 0b1010);
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 0b1110);
+}
+
+TEST_F(RV32ITest, AtomicMinMax)
+{
+	uint32_t addr = 0x100;
+	std::vector<uint32_t> program;
+
+	// --- AMOMIN.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr; // x1 = base address
+	cpu->registers[2] = 50; // x2 = new value
+	mem_store32(cpu->memory, addr, 100);
+	program = { 0x8020B1AF }; // amomin.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], 100); // rd gets original value
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 50); // Memory gets the minimum
+
+	// --- AMOMAX.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = (uint32_t)-50;
+	mem_store32(cpu->memory, addr, (uint32_t)-100);
+	program = { 0xA020B1AF }; // amomax.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], (uint32_t)-100);
+	EXPECT_EQ(mem_load32(cpu->memory, addr), (uint32_t)-50);
+
+	// --- AMOMINU.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = 300;
+	mem_store32(cpu->memory, addr, 200);
+	program = { 0xC020B1AF }; // amominu.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], 200);
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 200);
+
+	// --- AMOMAXU.W ---
+	cpu_reset(cpu);
+	cpu->registers[1] = addr;
+	cpu->registers[2] = 300;
+	mem_store32(cpu->memory, addr, 200);
+	program = { 0xE020B1AF }; // amomaxu.w x3, x2, (x1)
+	load_program(program);
+	run_program(1);
+	EXPECT_EQ(cpu->registers[3], 200);
+	EXPECT_EQ(mem_load32(cpu->memory, addr), 300);
+}

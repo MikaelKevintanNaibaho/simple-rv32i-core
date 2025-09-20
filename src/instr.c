@@ -384,6 +384,71 @@ static void system_exec(struct cpu *c, const Instruction *instr)
 	}
 }
 
+static void amo_exec(struct cpu *c, const Instruction *instr)
+{
+	u32 addr = c->registers[instr->rs1];
+	u32 val = c->registers[instr->rs2];
+	u32 loaded_val = mem_load32(c->memory, addr);
+
+	if (instr->rd != 0) {
+		c->registers[instr->rd] = loaded_val;
+	}
+
+	u32 result;
+	u32 funct5 = (instr->funct7 & 0b1111100) >> 2;
+
+	switch (funct5) {
+	case 0b00010: // LR.W
+		c->registers[instr->rd] = loaded_val;
+		c->reservation_set = 1;
+		c->reservation_address = addr;
+		break;
+	case 0b00011: // SC.W
+		if (c->reservation_set && c->reservation_address == addr) {
+			mem_store32(c->memory, addr, val);
+			c->registers[instr->rd] = 0;
+			c->reservation_set = 0;
+		} else {
+			c->registers[instr->rd] = 1;
+		}
+		break;
+	case 0b00001: // AMOSWAP.W
+		result = val;
+		break;
+	case 0b00000: // AMOADD.W
+		result = loaded_val + val;
+		break;
+	case 0b00100: // AMOXOR.W
+		result = loaded_val ^ val;
+		break;
+	case 0b01100: // AMOAND.W
+		result = loaded_val & val;
+		break;
+	case 0b01000: // AMOOR.W
+		result = loaded_val | val;
+		break;
+	case 0b10000: // AMOMIN.W
+		result = ((s32)loaded_val < (s32)val) ? loaded_val : val;
+		break;
+	case 0b10100: // AMOMAX.W
+		result = ((s32)loaded_val > (s32)val) ? loaded_val : val;
+		break;
+	case 0b11000: // AMOMINU.W
+		result = (loaded_val < val) ? loaded_val : val;
+		break;
+	case 0b11100: // AMOMAXU.W
+		result = (loaded_val > val) ? loaded_val : val;
+		break;
+	default:
+		printf("Error: Unknown AMO instruction with funct5=0x%x\n",
+		       funct5);
+		return;
+	}
+	if (funct5 != 0b00010 && funct5 != 0b00011) {
+		mem_store32(c->memory, addr, result);
+	}
+}
+
 // Main execution function: Decodes and then executes an instruction.
 void instr_exec(struct cpu *c, u32 raw_instr)
 {
@@ -425,6 +490,9 @@ void instr_exec(struct cpu *c, u32 raw_instr)
 		break;
 	case 0x73: // SYSTEM instruction (ECALL, EBREAK)
 		system_exec(c, &instr);
+		break;
+	case 0x2F: // Atomic instruction
+		amo_exec(c, &instr);
 		break;
 	default:
 		printf("Error: Unknown opcode=0x%x\n", instr.opcode);
