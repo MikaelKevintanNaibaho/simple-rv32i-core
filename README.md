@@ -42,6 +42,11 @@ Make sure you have the following installed:
   ```bash
   sudo apt install libgtest-dev
   ```
+- **Ncurses**
+  Used to build the emulator:
+  ```bash
+  sudo apt install libncurses-dev
+
 
 
 ### Installation

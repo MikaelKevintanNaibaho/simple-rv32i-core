@@ -24,7 +24,7 @@ CC         := gcc
 CXX        := g++
 CFLAGS     := -Wall -Wextra -std=c11 -I$(INC_DIR) -g
 CXXFLAGS   := -Wall -Wextra -std=c++14 -I$(INC_DIR) -g
-LDFLAGS    :=
+LDFLAGS    := -lncurses
 LDLIBS_GTEST := -lgtest -lgtest_main -pthread
 
 # Source & object files

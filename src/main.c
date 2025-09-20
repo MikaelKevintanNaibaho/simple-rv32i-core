@@ -1,7 +1,9 @@
 #include "cpu.h"
 #include "memory.h"
+#include "tui.h"
 #include <stdio.h>
 #include <stdlib.h> // Required for exit()
+#include <ncurses.h>
 
 // ANSI color codes
 #define ANSI_COLOR_RED "\x1b[31m"
@@ -47,49 +49,30 @@ int main(void)
 		cpu_destroy(cpu);
 		exit(1);
 	}
-
-	// Get the size of the file to know how many bytes to read
-	fseek(fp, 0, SEEK_END);
-	long program_size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-
-	if (program_size > MEM_SIZE) {
-		fprintf(stderr,
-			"Error: Program size (%ld bytes) is larger than memory size (%d bytes).\n",
-			program_size, MEM_SIZE);
-		fclose(fp);
-		cpu_destroy(cpu);
-		exit(1);
-	}
-
-	// Read the entire file into the beginning of the CPU's memory
-	size_t bytes_read = fread(cpu->memory, 1, program_size, fp);
-	if (bytes_read != (size_t)program_size) {
-		fprintf(stderr, "Error while reading file '%s'.\n", filename);
-		fclose(fp);
-		cpu_destroy(cpu);
-		exit(1);
-	}
+	size_t bytes_read = fread(cpu->memory, 1, MEM_SIZE, fp);
 	fclose(fp);
 
-	printf("Successfully loaded %zu bytes from '%s'.\n", bytes_read,
-	       filename);
+	// --- Initialize TUI ---
+	tui_init();
 
-	// Loop runs until the CPU state becomes HALTED.
-	printf("\n--- Starting Execution ---\n");
-	int step = 0;
-	while (cpu->state == CPU_STATE_RUNNING) {
-		printf("\nExecuting step %d at PC=0x%x\n", step++, cpu->pc);
+	// --- Main Execution Loop ---
+	int ch;
+	tui_update(cpu); // Initial draw
 
-		// Fetch and print the raw instruction for debugging
-		u32 raw_instr = mem_load32(cpu->memory, cpu->pc);
-		printf("Raw Instruction: 0x%08x\n", raw_instr);
-
-		cpu_step(cpu);
-		print_registers(cpu);
+	while ((ch = getch()) != 'q') {
+		if (ch == 's') {
+			if (cpu->state == CPU_STATE_RUNNING) {
+				cpu_step(cpu);
+			}
+			tui_update(cpu);
+		}
 	}
 
-	printf("\n--- Program finished ---\n");
+	// --- Cleanup ---
+	tui_destroy();
 	cpu_destroy(cpu);
+
+	printf("Emulator exited gracefully after loading %zu bytes.\n",
+	       bytes_read);
 	return 0;
 }
