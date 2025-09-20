@@ -404,3 +404,29 @@ TEST_F(RV32ITest, SystemInstructions)
 	EXPECT_EQ(cpu->pc, 0); // PC should point to the ebreak instruction
 	EXPECT_EQ(cpu->state, CPU_STATE_HALTED);
 }
+
+TEST_F(RV32ITest, MUL)
+{
+	std::vector<uint32_t> program = {
+		0x00500093, // addi x1, x0, 5
+		0x00A00113, // addi x2, x0, 10
+		0x022081B3, // mul x3, x1, x2 (5 * 10 = 50)
+	};
+	load_program(program);
+	run_program(program.size());
+
+	EXPECT_EQ(cpu->registers[3], 50);
+}
+
+TEST_F(RV32ITest, DIV)
+{
+	std::vector<uint32_t> program = {
+		0x06400093, // addi x1, x0, 100
+		0x00A00113, // addi x2, x0, 10
+		0x0220C1B3, // div x3, x1, x2 (100 / 10 = 10)
+	};
+	load_program(program);
+	run_program(program.size());
+
+	EXPECT_EQ(cpu->registers[3], 10);
+}

@@ -96,6 +96,64 @@ static void r_type_exec(struct cpu *c, const Instruction *instr)
 	u32 rs1 = instr->rs1;
 	u32 rs2 = instr->rs2;
 
+	if (instr->funct7 == 0x01) {
+		s64 val1 = (s64)(s32)c->registers[rs1];
+		s64 val2 = (s64)(s32)c->registers[rs2];
+		u64 u_val1 = (u64)c->registers[rs1];
+		u64 u_val2 = (u64)c->registers[rs2];
+		switch (instr->funct3) {
+		case 0x0: //MUL
+			c->registers[rd] = (u32)(val1 * val2);
+			break;
+		case 0x1: // MULH
+			c->registers[rd] = (u32)((val1 * val2) >> 32);
+			break;
+		case 0x2: // MULHSU
+			c->registers[rd] = (u32)(val1 * (s64)(u_val2) >> 32);
+			break;
+		case 0x3: // MULHU
+			c->registers[rd] = (u32)((u_val1 * u_val2) >> 32);
+			break;
+		case 0x4: // DIV
+			if (c->registers[rs2] == 0) {
+				c->registers[rd] =
+					0xFFFFFFFF; // Division by zero gives all 1s
+			} else {
+				c->registers[rd] =
+					(u32)((s32)c->registers[rs1] /
+					      (s32)c->registers[rs2]);
+			}
+			break;
+		case 0x5: // DIVU
+			if (c->registers[rs2] == 0) {
+				c->registers[rd] = 0xFFFFFFFF;
+			} else {
+				c->registers[rd] =
+					c->registers[rs1] / c->registers[rs2];
+			}
+			break;
+		case 0x6: // REM : signed reminder
+			if (c->registers[rs2] == 0) {
+				c->registers[rd] =
+					c->registers[rs1]; // reminder
+			} else {
+				c->registers[rd] =
+					(u32)((s32)c->registers[rs1] %
+					      (s32)c->registers[rs2]);
+			}
+			break;
+		case 0x7: // REMU : unsigned reminder
+			if (c->registers[rs2] == 0) {
+				c->registers[rd] = c->registers[rs1];
+			} else {
+				c->registers[rd] =
+					c->registers[rs1] % c->registers[rs2];
+			}
+			break;
+		}
+		return;
+	}
+
 	switch (instr->funct3) {
 	case 0x0: // ADD or SUB
 		if (instr->funct7 == 0x00) { // ADD

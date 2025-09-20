@@ -35,6 +35,18 @@ _start:
   sll   x4, x1, x2       # x4 = x1 << x2
   slt   x10, x1, x3      # x10 = 1 (signed comparison)
   sltu  x11, x1, x3      # x11 = 0 (unsigned comparison)
+  
+
+
+  # --- M-Extension: Multiplication ---
+  addi x5, x0, 8
+  addi x6, x0, 7
+  mul  x7, x5, x6  # x7 = 8 * 7 = 56
+
+  # --- M-Extension: Division ---
+  addi x8, x0, 100
+  addi x9, x0, 10
+  div  x10, x8, x9 # x10 = 100 / 10 = 10
 
   # --- I-Type: Shift Instructions ---
   lui   x20, 0x08000      # Load 0x80000 into the upper 20 bits of x20
