@@ -16,6 +16,7 @@ struct cpu *cpu_create(u32 mem_size)
 
 	c->pc = 0;
 	memset(c->registers, 0, sizeof(c->registers));
+	memset(c->prev_registers, 0, sizeof(c->prev_registers));
 	c->memory = memory_create(mem_size);
 	c->state = CPU_STATE_RUNNING;
 	c->reservation_set = 0;
@@ -38,6 +39,7 @@ void cpu_reset(struct cpu *c)
 		return;
 	c->pc = 0;
 	memset(c->registers, 0, sizeof(c->registers));
+	memset(c->prev_registers, 0, sizeof(c->prev_registers));
 	memset(c->memory, 0, MEM_SIZE);
 	c->state = CPU_STATE_RUNNING;
 	c->reservation_set = 0;
@@ -46,6 +48,9 @@ void cpu_reset(struct cpu *c)
 
 void cpu_step(struct cpu *c)
 {
+	// Store current registers before execution
+	memcpy(c->prev_registers, c->registers, sizeof(c->registers));
+
 	// Fetch the raw instruction
 	u32 raw_instr = mem_load32(c->memory, c->pc);
 

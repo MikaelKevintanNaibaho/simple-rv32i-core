@@ -18,6 +18,7 @@ enum cpu_state {
 
 struct cpu {
 	u32 registers[NREGS]; // 32 general-purpose registers
+	u32 prev_registers[NREGS]; // Store previous register values
 	u32 pc; // program counter
 	u32 reservation_set;
 	u32 reservation_address;

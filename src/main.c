@@ -3,14 +3,26 @@
 #include <stdio.h>
 #include <stdlib.h> // Required for exit()
 
+// ANSI color codes
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_GREEN "\x1b[32m"
+#define ANSI_COLOR_RESET "\x1b[0m"
+
 // A more compact and readable register print function
 void print_registers(struct cpu *cpu)
 {
 	printf("PC: 0x%08x\n", cpu->pc);
 	printf("-----------------------------------------------------\n");
 	for (int i = 0; i < 32; i++) {
-		// Print register name (e.g., "x10") and its hex value
-		printf("x%-2d: 0x%08x   ", i, cpu->registers[i]);
+		if (cpu->registers[i] != cpu->prev_registers[i]) {
+			// Print changed registers in green
+			printf(ANSI_COLOR_GREEN
+			       "x%-2d: 0x%08x   " ANSI_COLOR_RESET,
+			       i, cpu->registers[i]);
+		} else {
+			// Print unchanged registers in the default color
+			printf("x%-2d: 0x%08x   ", i, cpu->registers[i]);
+		}
 
 		// Print a newline after every 4th register
 		if ((i + 1) % 4 == 0) {
