@@ -8,6 +8,7 @@
 WINDOW *reg_win;
 WINDOW *cpu_win;
 WINDOW *mem_win;
+WINDOW *con_win;
 
 // Standard RISC-V ABI register names for better readability
 const char *reg_abi_names[32] = { "zero", "ra", "sp", "gp", "tp", "t0",	 "t1",
@@ -39,7 +40,8 @@ void tui_init()
 	// Create windows
 	reg_win = newwin(18, 56, 1, 1);
 	cpu_win = newwin(5, width - 59, 1, 58);
-	mem_win = newwin(height - 7, width - 59, 7, 58);
+	mem_win = newwin(height - 13, width - 59, 7, 58);
+	con_win = newwin(5, width - 59, height - 5, 58);
 
 	// Enable keypad for the main window
 	keypad(stdscr, TRUE);
@@ -54,6 +56,7 @@ void tui_destroy()
 	delwin(reg_win);
 	delwin(cpu_win);
 	delwin(mem_win);
+	delwin(con_win);
 	endwin();
 }
 
@@ -68,6 +71,7 @@ void tui_update(struct cpu *cpu)
 	werase(reg_win);
 	werase(cpu_win);
 	werase(mem_win);
+	werase(con_win);
 
 	// --- Draw Register Window (New 2-Column Layout) ---
 	draw_borders(reg_win, "Registers");
@@ -126,10 +130,13 @@ void tui_update(struct cpu *cpu)
 			}
 		}
 	}
+	draw_borders(con_win, "Console");
+	mvwprintw(con_win, 1, 2, "%s", cpu->output_buffer);
 
 	wrefresh(reg_win);
 	wrefresh(cpu_win);
 	wrefresh(mem_win);
+	wrefresh(con_win);
 
 	mvprintw(20, 2, "Press 's' to step, 'q' to quit.");
 	refresh();
