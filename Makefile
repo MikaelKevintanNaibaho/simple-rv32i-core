@@ -11,8 +11,7 @@ RISCV_PREFIX  := riscv64-unknown-elf-
 RISCV_AS      := $(RISCV_PREFIX)as
 RISCV_LD      := $(RISCV_PREFIX)ld      # <-- NEW: Linker tool
 RISCV_OBJCOPY := $(RISCV_PREFIX)objcopy
-RISCV_ASFLAGS :=
-
+RISCV_ASFLAGS := -march=rv32ima -mabi=ilp32
 # --- Assembly Program ---
 ASM_SRC       := program.s
 ASM_OBJ       := $(BUILD_DIR)/program.o
@@ -45,7 +44,7 @@ $(ASM_BIN): $(ASM_SRC) | $(BUILD_DIR)
 	$(RISCV_AS) $(RISCV_ASFLAGS) -o $(ASM_OBJ) $<
 	@echo "  LD      $(ASM_OBJ) -> $(ASM_ELF)"
 	# --- THIS LINE IS MODIFIED ---
-	$(RISCV_LD) -T linker.ld -o $(ASM_ELF) $(ASM_OBJ)
+	$(RISCV_LD) -m elf32lriscv -T linker.ld -o $(ASM_ELF) $(ASM_OBJ)
 	@echo "  OBJCOPY $(ASM_ELF) -> $@"
 	$(RISCV_OBJCOPY) -O binary $(ASM_ELF) $@
 
