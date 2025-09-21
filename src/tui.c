@@ -1,6 +1,7 @@
 #include "tui.h"
 #include "memory.h"
 #include <ncurses.h>
+#include "disassembler.h"
 #include <string.h>
 
 // Define window pointers
@@ -99,8 +100,12 @@ void tui_update(struct cpu *cpu)
 	// --- Draw CPU Status Window ---
 	draw_borders(cpu_win, "CPU Status");
 	u32 instruction = mem_load32(cpu->memory, cpu->pc);
+	char disassembled[128]; // Buffer for disassembled instruction
+	disassemble(instruction, disassembled,
+		    sizeof(disassembled)); // Disassemble the instruction
 	mvwprintw(cpu_win, 1, 2, "PC          : 0x%08x", cpu->pc);
-	mvwprintw(cpu_win, 2, 2, "Instruction : 0x%08x", instruction);
+	mvwprintw(cpu_win, 2, 2, "Instruction : 0x%08x (%s)", instruction,
+		  disassembled);
 	mvwprintw(cpu_win, 3, 2, "State       : %s",
 		  (cpu->state == CPU_STATE_RUNNING) ? "Running" : "Halted");
 
