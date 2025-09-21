@@ -7,6 +7,7 @@
 #define XLEN 32 /* Register width */
 #define NREGS 32 /* Number of Integer Register */
 #define MEM_SIZE 65536 /* Default memmory size: 64KB */
+#define OUTPUT_BUFFER_SIZE 1024 /* Size for our console buffer */
 
 /* CPU state */
 
@@ -24,6 +25,10 @@ struct cpu {
 	u32 reservation_address;
 	u8 *memory; // system memory
 	enum cpu_state state; // state field
+
+	// Console output buffer
+	char output_buffer[OUTPUT_BUFFER_SIZE];
+	u32 output_buffer_pos;
 };
 
 /* CPU interface */

@@ -4,6 +4,8 @@
 #include "memory.h"
 #include <stdio.h>
 
+static void syscall_handler(struct cpu *c);
+
 // Extract bit range [hi:lo] from x
 static inline u32 get_bits(u32 x, int hi, int lo)
 {
@@ -367,11 +369,7 @@ static void system_exec(struct cpu *c, const Instruction *instr)
 {
 	switch (instr->imm) {
 	case 0x0: // ECALL
-		printf("ECALL executed. Halting,\n");
-		c->state = CPU_STATE_HALTED;
-		/* to halt correctly, the PC should point to this instruction.
-        * substract 4 to counteract the 'pc += 4' in cpu_step().*/
-		c->pc -= 4;
+		syscall_handler(c);
 		break;
 	case 0x1: // EBREAK
 		printf("EBREAK executed. Halting.\n");
@@ -381,6 +379,39 @@ static void system_exec(struct cpu *c, const Instruction *instr)
 	default:
 		printf("Error: Unknown SYSTEM instruction with imm=0x%x\n",
 		       instr->imm);
+	}
+}
+
+static void syscall_handler(struct cpu *c)
+{
+	// RISC-V ABI uses register a7 (x17) for syscall number
+	// add a0-a6 for arguments.
+	u32 syscall_num = c->registers[17];
+
+	switch (syscall_num) {
+	// A custom syscall number for printing a single char
+	case 1: {
+		// the char to print is in register a0 (x10)
+		char character = (char)c->registers[10];
+		if (c->output_buffer_pos < OUTPUT_BUFFER_SIZE - 1) {
+			c->output_buffer[c->output_buffer_pos++] = character;
+			c->output_buffer[c->output_buffer_pos] =
+				'\0'; // keep null terminated
+		}
+		break;
+	}
+	// Standard RISC-V syscall number for exiting the program
+	case 93: {
+		// // exit code is in register a0(x10)
+		// int exit_code = (int)c->registers[10];
+		// printf("\nECALL: exit(%d) called.\n", exit_code);
+		c->state = CPU_STATE_HALTED;
+		break;
+	}
+	default:
+		printf("\nECALL: Unknown syscall number &u\n", syscall_num);
+		c->state = CPU_STATE_HALTED;
+		break;
 	}
 }
 

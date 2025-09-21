@@ -1,6 +1,6 @@
 # program.s
-# A comprehensive test program for the RV32I emulator.
-# It covers all implemented instruction types.
+# A comprehensive test program for the RV32I emulator, with a logical execution flow.
+# All instruction tests run first, followed by a syscall demonstration, and then a clean exit.
 
 .globl _start
 
@@ -29,31 +29,29 @@ _start:
   and   x12, x5, x6
 
   # --- R-Type: More Register-Register ---
-  li    x1, 0x0800000F   # Load a negative number into x1
-  li    x2, 4            # Load shift amount into x2
-  li    x3, 1            # Load a positive number into x3
-  sll   x4, x1, x2       # x4 = x1 << x2
-  slt   x10, x1, x3      # x10 = 1 (signed comparison)
-  sltu  x11, x1, x3      # x11 = 0 (unsigned comparison)
-  
-
+  li    x1, 0x0800000F
+  li    x2, 4
+  li    x3, 1
+  sll   x4, x1, x2
+  slt   x10, x1, x3
+  sltu  x11, x1, x3
 
   # --- M-Extension: Multiplication ---
   addi x5, x0, 8
   addi x6, x0, 7
-  mul  x7, x5, x6  # x7 = 8 * 7 = 56
+  mul  x7, x5, x6
 
   # --- M-Extension: Division ---
   addi x8, x0, 100
   addi x9, x0, 10
-  div  x10, x8, x9 # x10 = 100 / 10 = 10
+  div  x10, x8, x9
 
   # --- I-Type: Shift Instructions ---
-  lui   x20, 0x08000      # Load 0x80000 into the upper 20 bits of x20
-  addi  x20, x20, 15      # Add 15 (0xF) to the value in x20
-  slli  x21, x20, 4         # x21 = x20 << 4  (logical left shift)
-  srli  x22, x20, 4         # x22 = x20 >> 4  (logical right shift)
-  srai  x23, x20, 4         # x23 = x20 >> 4  (arithmetic right shift)
+  lui   x20, 0x08000
+  addi  x20, x20, 15
+  slli  x21, x20, 4
+  srli  x22, x20, 4
+  srai  x23, x20, 4
 
   # --- U-Type: Upper Immediate Instructions ---
   lui   x13, 0xABCDE
@@ -94,46 +92,59 @@ bltu_taken:
 bgeu_taken:
 
   # --- Jump Instructions (JAL, JALR) ---
-  jal   x1, subroutine      # Jump to 'subroutine', store return PC in x1 (ra)
+  jal   x1, subroutine
 
-  # This code executes AFTER the subroutine returns.
-  # We immediately jump to the end to halt the program.
-  j     end_loop
+  # --- Syscall Demonstration ---
+  # This code runs after the subroutine and atomic tests are complete.
+  li    a7, 1      # Syscall number for "print char"
+  li    a0, 'H'
+  ecall
+  li    a0, 'e'
+  ecall
+  li    a0, 'l'
+  ecall
+  ecall            # Print 'l' again
+  li    a0, 'o'
+  ecall
+  li    a0, ','
+  ecall
+  li    a0, ' '
+  ecall
+  li    a0, 'w'
+  ecall
+  li    a0, 'o'
+  ecall
+  li    a0, 'r'
+  ecall
+  li    a0, 'l'
+  ecall
+  li    a0, 'd'
+  ecall
+  li    a0, '!'
+  ecall
+  li    a0, '\n'
+  ecall
 
-# --- Subroutine Definition ---
-# This code is now placed outside the main execution path.
-# It is only executed when explicitly jumped to.
+  # --- Halt Program ---
+  # This is the final step. Use the standard RISC-V exit ecall.
+end_program:
+  li a7, 93    # ecall code for exit
+  li a0, 0     # exit code 0
+  ecall        # This will signal the emulator to halt.
+
+# --- Subroutine and Test Definitions ---
+# These are placed out of the main execution flow and are only reached by jumps.
 subroutine:
-  addi  x27, x0, 123        # Inside the subroutine, x27 = 123
-  jalr  x0, x1, 0           # Jump back using the address stored in x1
+  addi  x27, x0, 123
+  jal   x0, amo_test  # Jump to the atomic test section
+  jalr  x0, x1, 0     # Jump back using the address stored in x1 (ra)
 
-after_subroutine:
-  jal x0, amo_test          # Now, call the atomic test section
-
-# --- Atomic Instructions ---
 amo_test:
-  la    x10, amo_data       # Load address of our test data
-  li    x11, 5              # Load value 5 into x11
-  # Swap the value in memory (initially 0) with x11 (5)
-  # x12 will get the old value (0)
-  # memory will now contain 5
+  la    x10, amo_data
+  li    x11, 5
   amoswap.w x12, x11, (x10)
-  # Add the value in x11 (5) to memory (currently 5)
-  # x13 will get the old value (5)
-  # memory will now contain 10
   amoadd.w  x13, x11, (x10)
-  jr x31 # Return from amo_test subroutine (assuming x31 has return address, though jal x0 doesn't set one)
-
-# --- Halt Program ---
-# Use FENCE and then ECALL to gracefully stop the emulator.
-end_loop:
-  fence    # Demonstrate that FENCE assembles and executes.
-  ecall    # This will signal the emulator to halt.
-
-# An infinite loop in case the halt mechanism fails.
-# This should not be reached anymore.
-inf_loop:
-  j inf_loop
+  jr    ra # Return from amo_test using the return address
 
 # --- DATA SECTION ---
 .data
